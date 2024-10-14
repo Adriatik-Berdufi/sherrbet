@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:sherrbet/screens/predictions.dart';
+import 'package:sherrbet/services/auth_services/auth_service.dart';
 import 'package:sherrbet/widgets/auth_form.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -23,6 +25,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoginMode = true;
+
+  //istanza authservice
+  final AuthService _authService = AuthService();
 
 //VALIDAZIONE CAMPI INPUT
 
@@ -73,9 +79,29 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
 //FUNZIONE PER INVIARE IL FORM
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       print('form completto pronto per Invio');
+    }
+  }
+
+//Login
+  Future<void> _login() async {
+    if (_formKey.currentState!.validate()) {
+      String email = _emailController.text;
+      String password = _passwordController.text;
+
+      try {
+        final response = await _authService.login(email, password);
+        print('Login riuscito: $response');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => PredictionsSreen()),
+        );
+      } catch (e) {
+        print('Errore nel login: $e');
+      }
     }
   }
 
@@ -89,6 +115,13 @@ class _AuthScreenState extends State<AuthScreen> {
   void _toggleConfirmObscurePassword() {
     setState(() {
       _obscureConfirmPassword = !_obscureConfirmPassword;
+    });
+  }
+
+//Switch per Autenticazione
+  void _switchAuthMode() {
+    setState(() {
+      _isLoginMode = !_isLoginMode;
     });
   }
 
@@ -113,7 +146,6 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         child: Center(
           child: SingleChildScrollView(
-            //padding: EdgeInsets.all(18),
             child: Form(
               key: _formKey,
               child: Container(
@@ -135,21 +167,24 @@ class _AuthScreenState extends State<AuthScreen> {
                         horizontal: 16.0, vertical: 36.0),
                     child: Column(
                       children: [
-                        Authform.buildTextField(
-                          labelText: 'Nome',
-                          controller: _nomeController,
-                          validator: _validateField,
-                        ),
-                        Authform.buildTextField(
-                          labelText: 'Cognome',
-                          controller: _cognomeController,
-                          validator: _validateField,
-                        ),
-                        Authform.buildTextField(
-                          labelText: 'NickName',
-                          controller: _nickNameController,
-                          validator: _validateField,
-                        ),
+                        if (!_isLoginMode)
+                          Authform.buildTextField(
+                            labelText: 'Nome',
+                            controller: _nomeController,
+                            validator: _validateField,
+                          ),
+                        if (!_isLoginMode)
+                          Authform.buildTextField(
+                            labelText: 'Cognome',
+                            controller: _cognomeController,
+                            validator: _validateField,
+                          ),
+                        if (!_isLoginMode)
+                          Authform.buildTextField(
+                            labelText: 'NickName',
+                            controller: _nickNameController,
+                            validator: _validateField,
+                          ),
                         Authform.buildTextField(
                           labelText: 'Email',
                           controller: _emailController,
@@ -162,21 +197,28 @@ class _AuthScreenState extends State<AuthScreen> {
                             obscureText: _obscurePassword,
                             toggleobscureText: _toggleObscurePassword,
                             validator: _validatePassword),
-                        Authform.buildTextField(
-                          labelText: 'Confirm Password',
-                          controller: _confirmPasswordController,
-                          isPasswordField: true,
-                          obscureText: _obscureConfirmPassword,
-                          toggleobscureText: _toggleConfirmObscurePassword,
-                          validator: _validateConfirmPassword,
-                        ),
+                        if (!_isLoginMode)
+                          Authform.buildTextField(
+                            labelText: 'Confirm Password',
+                            controller: _confirmPasswordController,
+                            isPasswordField: true,
+                            obscureText: _obscureConfirmPassword,
+                            toggleobscureText: _toggleConfirmObscurePassword,
+                            validator: _validateConfirmPassword,
+                          ),
                         ElevatedButton(
-                          onPressed: _submitForm,
-                          child: Text('Registrati'),
+                          onPressed: _isLoginMode ? _login : _submitForm,
+                          child: Text(_isLoginMode ? 'Login' : 'Registrati'),
                         ),
                         TextButton(
-                          onPressed: () {},
-                          child: Text('Hai gia un account.'),
+                          onPressed: _switchAuthMode,
+                          child: Text(
+                            _isLoginMode ? 'Registrti' : 'Hai gia un account?',
+                            style: TextStyle(
+                              color: const Color.fromARGB(255, 255, 0, 0)
+                                  .withOpacity(0.7),
+                            ),
+                          ),
                         ),
                       ],
                     ),
